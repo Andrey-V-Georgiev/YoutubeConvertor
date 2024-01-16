@@ -1,21 +1,13 @@
-import fetch from 'node-fetch'
-import { ConvertOptions } from '../interfaces/convertOptions.js';
+import { ConvertOptions } from '../interfaces/convertOptions.js'
+import { createQueue, publishToQueue } from '../services/rabbitmqService.js'
+import { CONVERT_QUEUE } from '../config/rabbitmqConfig.js'
 
-const tsConverterPort: number = 3001
 
-const sendLinkToQueue = async (options: ConvertOptions): Promise<string> => {
-
-    const response = await fetch(`http://localhost:${tsConverterPort}`, {
-        method: 'post',
-        body: JSON.stringify(options),
-        headers: { 'Content-Type': 'application/json' }
-    });
-
-    const resJson: string = await response.json() as string
-
-    return resJson
-}
-
-export {
-    sendLinkToQueue
+export const sendLinkToQueue = async (options: ConvertOptions): Promise<boolean> => {
+    try {
+        return publishToQueue(CONVERT_QUEUE, options.youtubeLink)
+    } catch (error) {
+        console.log(error.message)
+        throw error
+    }
 }

@@ -1,10 +1,15 @@
-
-import express, { Request, Response , Application } from 'express';
-import bodyParser from 'body-parser';
-import { ConvertOptions } from './interfaces/convertOptions';
+import express, { Application } from 'express'
+import bodyParser from 'body-parser'
+import { TS_CONVERT_PORT } from './config/commonConfig.js'
+import { 
+  connectToRabbitMQ, 
+  createQueue, 
+  subscribeToQueue 
+} from './services/rabbitmqService.js'
+import { CONVERT_QUEUE } from './config/rabbitmqConfig.js'
+import { convertQueueCallback } from './services/appService.js'
 
 const app: Application = express();
-const port = 3001;
 
 app.use(bodyParser.json())
 
@@ -12,11 +17,10 @@ app.use(bodyParser.urlencoded({
   extended: true
 }))
 
-app.listen(port, () => {
-  console.log(`TS-CONVERTER at http://localhost:${port}`);
+app.listen(TS_CONVERT_PORT, async () => {
+  console.log(`Server is running on port:${TS_CONVERT_PORT}`)
+  await connectToRabbitMQ()
+  await createQueue(CONVERT_QUEUE, { durable: false })
+  await subscribeToQueue(CONVERT_QUEUE, convertQueueCallback)
 })
 
-app.post('/', async (req: Request, res: Response) => {
-  const options: ConvertOptions = req.body  
-  res.status(200).json('Response from ts-converter: ' + options.youtubeLink)
-})
